@@ -1,20 +1,6 @@
 #include "main.h"
 
-void initialize() {
-
-	lv_obj_t * scr = lv_disp_get_scr_act(NULL);     /*Get the current screen*/
-
-    /*Create a Label on the currently active screen*/
-    lv_obj_t * label1 =  lv_label_create(scr, NULL);
-
-    /*Modify the Label's text*/
-    lv_label_set_text(label1, "Hello world!");
-
-    /* Align the Label to the center
-     * NULL means align on parent (which is the screen now)
-     * 0, 0 at the end means an x, y offset after alignment*/
-    lv_obj_align(label1, NULL, LV_ALIGN_CENTER, 0, 0);
-}
+void initialize() {}
 
 /**
  * Runs while the robot is in the disabled state of Field Management System or
@@ -66,24 +52,21 @@ void opcontrol() {
 	int timer = 0;
 
 	while (true) {
-		// lcd::print(1, "%d %d %d", (lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
-		                // (lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
-		                // (lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
+		lcd::print(1, "%d %d %d", (lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
+		                (lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
+		                (lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
+
 		int left = master.get_analog(ANALOG_LEFT_Y);
 		int right = master.get_analog(ANALOG_RIGHT_Y);
 		int leftHoriz = master.get_analog(ANALOG_LEFT_X);
-		// lcd::print(2, "%d %d", left, right);
 		
-		if(!(timer % 3)) {
+		lcd::print(2, "%d %d", left, right);
+		
+		if(!(timer % 25)) {
 			master.print(0, 0, "%d", leftHoriz);
 		}
 
-		if(!(timer % 3)) {
-			master.rumble(". - . -");
-		}
-
-
 		timer++;
-		delay(20);
+		delay(2);
 	}
 }
