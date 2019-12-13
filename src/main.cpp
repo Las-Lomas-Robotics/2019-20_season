@@ -1,6 +1,8 @@
 #include "main.h"
 
-void initialize() {}
+void initialize() {
+	
+}
 
 /**
  * Runs while the robot is in the disabled state of Field Management System or
@@ -48,20 +50,38 @@ void autonomous() {}
  */
 void opcontrol() {
 	Controller master (CONTROLLER_MASTER);
+	Motor leftMotor (1, E_MOTOR_GEARSET_18, false, E_MOTOR_ENCODER_DEGREES);
+	Motor rightMotor (2, E_MOTOR_GEARSET_18, true, E_MOTOR_ENCODER_DEGREES);
+	Motor testMotor1 (3, E_MOTOR_GEARSET_18, false, E_MOTOR_ENCODER_DEGREES);
+	Motor testMotor2 (4, E_MOTOR_GEARSET_18, true, E_MOTOR_ENCODER_DEGREES);
+	Motor testMotor3 (5, E_MOTOR_GEARSET_18, false, E_MOTOR_ENCODER_DEGREES);
+
+	lv_obj_t * scr1 = lv_obj_create(NULL, NULL);
+	lv_obj_t * btn1 = lv_btn_create(lv_scr_act(), NULL);             /*Add to the active screen*/
+	lv_obj_align(btn1, NULL, LV_ALIGN_CENTER, 0, -40);
+
+	lv_obj_t * label = lv_label_create(btn1, NULL);                  /*Put on 'btn1'*/
+	lv_label_set_text(label, "Click me"); 
 
 	int timer = 0;
 
 	while (true) {
+		/*
 		lcd::print(1, "%d %d %d", (lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
 		                (lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
 		                (lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
-
+		*/
 		int left = master.get_analog(ANALOG_LEFT_Y);
 		int right = master.get_analog(ANALOG_RIGHT_Y);
 		int leftHoriz = master.get_analog(ANALOG_LEFT_X);
 		
-		lcd::print(2, "%d %d", left, right);
+		testMotor1.move(left);
+		testMotor2.move(left);
+		testMotor3.move(right);
+
+		//lcd::print(2, "%d %d", left, right);
 		
+
 		if(!(timer % 25)) {
 			master.print(0, 0, "%d", leftHoriz);
 		}
