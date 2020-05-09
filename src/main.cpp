@@ -1,5 +1,7 @@
 #include "main.h"
 
+double atan2(double x, double y);
+
 void initialize() {
 	
 }
@@ -52,9 +54,13 @@ void opcontrol() {
 	Controller master (CONTROLLER_MASTER);
 	Motor leftMotor (1, E_MOTOR_GEARSET_18, false, E_MOTOR_ENCODER_DEGREES);
 	Motor rightMotor (2, E_MOTOR_GEARSET_18, true, E_MOTOR_ENCODER_DEGREES);
-	Motor testMotor1 (3, E_MOTOR_GEARSET_18, false, E_MOTOR_ENCODER_DEGREES);
-	Motor testMotor2 (4, E_MOTOR_GEARSET_18, true, E_MOTOR_ENCODER_DEGREES);
-	Motor testMotor3 (5, E_MOTOR_GEARSET_18, false, E_MOTOR_ENCODER_DEGREES);
+	Motor leftIntakeMotor (3, E_MOTOR_GEARSET_18, false, E_MOTOR_ENCODER_DEGREES);
+	Motor rightIntakeMotor (4, E_MOTOR_GEARSET_18, true, E_MOTOR_ENCODER_DEGREES);
+	Motor intakeAngleMotor (5, E_MOTOR_GEARSET_18, false, E_MOTOR_ENCODER_DEGREES);
+	ADIDigitalIn limitSwitch(1);
+
+	uint8_t intakeDir = 0;
+	bool pressed = false;
 
 	lv_obj_t * scr1 = lv_obj_create(NULL, NULL);
 	lv_obj_t * btn1 = lv_btn_create(lv_scr_act(), NULL);             /*Add to the active screen*/
@@ -71,22 +77,62 @@ void opcontrol() {
 		                (lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
 		                (lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
 		*/
-		int left = master.get_analog(ANALOG_LEFT_Y);
-		int right = master.get_analog(ANALOG_RIGHT_Y);
+		int leftVert = master.get_analog(ANALOG_LEFT_Y);
+		int rightVert = master.get_analog(ANALOG_RIGHT_Y);
 		int leftHoriz = master.get_analog(ANALOG_LEFT_X);
-		
-		testMotor1.move(left);
-		testMotor2.move(left);
-		testMotor3.move(right);
+		int rightHoriz = master.get_analog(ANALOG_RIGHT_X);
+
+		leftMotor.move(sqrt(rightHoriz*rightHoriz + rightVert*rightVert) * cos(atan2(-1 * rightHoriz, rightVert) + M_PI_4));
+		rightMotor.move(sqrt(rightHoriz*rightHoriz + rightVert*rightVert) * sin(atan2(-1 * rightHoriz, rightVert) + M_PI_4));
+
+		if(master.get_digital(DIGITAL_R1) && !limitSwitch.get_value()) {
+			intakeAngleMotor.move(127);
+		} else if(master.get_digital(DIGITAL_R2)) {
+			intakeAngleMotor.move(-127);
+		} else {
+			intakeAngleMotor.move(0);
+		}
+
+		if(master.get_digital(DIGITAL_L1) && !pressed) {
+			pressed = true;
+			if(intakeDir != 1) intakeDir = 1;
+			else intakeDir = 0;
+		} else if(master.get_digital(DIGITAL_L2)) {
+			intakeDir = -1;
+			pressed = true;
+		} else {
+			if(intakeDir == -1) {
+				intakeDir = 0;
+			}
+			pressed = false;
+		}
+
+		if(intakeDir == 1) {
+			leftIntakeMotor.move(127 + leftHoriz);
+			rightIntakeMotor.move(127 + leftHoriz);
+		} else if(intakeDir == -1) {
+			leftIntakeMotor.move(-127 + leftHoriz);
+			rightIntakeMotor.move(-127 + leftHoriz);
+		} else {
+			leftIntakeMotor.move(0);
+			rightIntakeMotor.move(0);
+		}
 
 		//lcd::print(2, "%d %d", left, right);
-		
-
-		if(!(timer % 25)) {
-			master.print(0, 0, "%d", leftHoriz);
-		}
 
 		timer++;
 		delay(2);
 	}
+}
+
+
+// Gets angle of point from origin(doesn't count down from 90 after reaching it like atan)
+double atan2(double x, double y) {
+	if(x > 0) return atan(y / x);
+	else if(x < 0 && y >= 0) return atan(y / x) + M_PI;
+	else if(x < 0 && y < 0) return atan(y / x) - M_PI;
+	else if(x == 0 && y > 0) return M_PI_2;
+	else if(x == 0 && y < 0) return -1 * M_PI_2;
+	
+	return 0;
 }
